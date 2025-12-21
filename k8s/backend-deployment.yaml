@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: blog-app
+spec:
+  replicas: 2 # Deux instances pour la haute disponibilité
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: dripp/backend-app:latest # Changez si vous utilisez Docker Hub
+          imagePullPolicy: Always # Utilise l'image locale si existe
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-app-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-app-config
+                  key: PORT
+            - name: MONGO_DB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: blog-app-secrets
+                  key: MONGO_DB_URI
+            - name: MONGO_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-app-config
+                  key: MONGO_DB_NAME
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
