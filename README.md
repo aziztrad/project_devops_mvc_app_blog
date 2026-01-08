@@ -739,13 +739,6 @@ Accéder aux différents services via les URLs suivantes :
 
 ---
 
-### 🔒 Sécurité
-
-- Variables sensibles sont ignorées dans [.gitignore](.gitignore) (`.env`, credentials Docker Hub)
-- Utiliser [.env.example](.env.example) comme template pour configurer les variables locales
-- Dockerfile utilise [.dockerignore](.dockerignore) pour exclure les fichiers inutiles
-- Secrets Kubernetes dans [k8s/secret.yaml](k8s/secret.yaml) à adapter selon l'environnement
-
 ## 📄 Licence
 
-Ce projet est à but éducatif dans le cadre du cours MERN de l'École Polytechnique de Sousse.
+By me @aziztrad
