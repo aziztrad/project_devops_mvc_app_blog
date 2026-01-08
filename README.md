@@ -569,27 +569,182 @@ Outil de développement qui surveille les modifications de fichiers et relance a
 - ✅ Détection automatique des changements
 - ✅ Configuration simple
 
-## 🛠️ CI/CD et Observabilité
+## 🛠️ CI/CD et Observabilité - Guide Pratique
 
-### Jenkins
+### 📍 ÉTAPE 1 : DÉMARRER L'APPLICATION EN LOCAL
 
-- Pipeline déclarative dans [Jenkinsfile](Jenkinsfile) : build image Docker, scan simulé Trivy, push Docker Hub, étape de déploiement Kubernetes simulée.
-- Variables d'identifiants Docker Hub référencées via `dockerhub-credentials` (à configurer dans Jenkins Credentials).
+Vérifier que l'application est opérationnelle localement :
 
-### Docker
+```bash
+npm install
+npm run dev
+```
 
-- Image construite depuis la racine (Dockerfile) et publiée sous `dripp/backend-app` (tag build number et `latest`).
-- Contexte allégé via [.dockerignore](.dockerignore) et variables sensibles non incluses grâce à [.gitignore](.gitignore).
+**Tests de connectivité :**
 
-### Helm Chart
+```bash
+curl http://localhost:3000/
+curl http://localhost:3000/health/live
+curl http://localhost:3000/health/ready
+curl http://localhost:3000/metrics
+```
 
-- Chart dans [blog-app-chart](blog-app-chart) avec valeurs par défaut dans [values.yaml](blog-app-chart/values.yaml#L1-L71) (MONGO_DB_URI, PORT, annotations Prometheus, service LoadBalancer).
-- Déploiement modèle dans [templates/deployment.yaml](blog-app-chart/templates/deployment.yaml#L1-L13) à adapter selon l'image et les ressources souhaitées.
+Vous devriez voir les métriques Prometheus exposées sur `/metrics`.
 
-### Prometheus & Grafana
+---
 
-- Métriques exposées via `express-prom-bundle` sur `/metrics` (port 3000) comme déclaré dans [server.js](server.js#L9-L66).
-- Annotations de scraping déjà posées dans le chart Helm (port 3000, chemin `/metrics`). Grafana peut consommer ces métriques via Prometheus pour dashboards basiques (latence, taux d'erreur, throughput).
+### 📍 ÉTAPE 2 : DÉPLOYER SUR KUBERNETES
+
+Appliquer tous les manifestes Kubernetes dans l'ordre :
+
+```bash
+# Créer le namespace
+kubectl apply -f k8s/namespace.yaml
+
+# Appliquer configurations et secrets
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.yaml
+
+# Déployer MongoDB
+kubectl apply -f k8s/mongodb-pvc.yaml
+kubectl apply -f k8s/mongodb-deployment.yaml
+kubectl apply -f k8s/mongodb-service.yaml
+
+# Déployer l'application backend
+kubectl apply -f k8s/backend-deployment.yaml
+kubectl apply -f k8s/backend-service.yaml
+```
+
+**Vérifier le déploiement :**
+
+```bash
+# Lister les pods
+kubectl get pods -n blog-app
+
+# Lister les services
+kubectl get services -n blog-app
+
+# Afficher les logs du backend
+kubectl logs -n blog-app deployment/backend-deployment --follow
+```
+
+---
+
+### 📍 ÉTAPE 3 : DÉMARRER JENKINS (CI/CD Pipeline)
+
+Jenkins est configuré pour automatiser les étapes de build, test, scan sécurité et déploiement.
+
+**Démarrer/arrêter Jenkins :**
+
+```bash
+# Démarrer Jenkins
+docker start jenkins
+
+# Arrêter Jenkins
+docker stop jenkins
+```
+
+**Accéder à Jenkins :**
+
+```
+URL : http://localhost:8089
+```
+
+**Pipeline dans [Jenkinsfile](Jenkinsfile) :**
+
+- ✅ Build image Docker (`dripp/backend-app:${BUILD_NUMBER}`)
+- ✅ Scan de sécurité avec Trivy (simulation intégrée)
+- ✅ Push vers Docker Hub
+- ✅ Étape de déploiement Kubernetes (simulée)
+
+**Configuration requise :**
+
+- Ajouter credential Jenkins : `dockerhub-credentials` (username/password)
+- Vérifier que Docker est accessible depuis Jenkins
+
+---
+
+### 📍 ÉTAPE 4 : DÉMARRER LE MONITORING (Prometheus + Grafana)
+
+Activer le monitoring avec Prometheus et Grafana pour suivre les métriques de l'application.
+
+**Port-forward pour Grafana (Terminal 1) :**
+
+```bash
+kubectl port-forward --namespace monitoring service/monitoring-grafana 8080:80
+```
+
+**Port-forward pour Prometheus (Terminal 2) :**
+
+```bash
+kubectl port-forward --namespace monitoring service/prometheus-operated 9090:9090
+```
+
+Les métriques sont exposées par [express-prom-bundle](server.js#L9-L66) sur `/metrics` (port 3000).
+
+---
+
+### 📍 ÉTAPE 5 : UTILISER HELM CHARTS
+
+Helm facilite le déploiement et la gestion des configurations Kubernetes.
+
+**Naviguer vers le projet :**
+
+```bash
+cd C:\Users\YOOSURF\Desktop\devoir_DEVOPS\App_blog_Mohamed_Aziz_Trad_GL1
+```
+
+**Afficher la structure du chart :**
+
+```bash
+dir blog-app-chart\
+tree blog-app-chart /F  # si disponible sur votre système
+```
+
+**Valider le chart Helm :**
+
+```bash
+# Indiquer le chemin vers helm.exe si nécessaire
+helm lint blog-app-chart
+```
+
+**Générer les manifests Kubernetes depuis le chart :**
+
+```bash
+helm template blog-app-test blog-app-chart
+```
+
+**Chart Helm dans [blog-app-chart](blog-app-chart) :**
+
+- 📄 [Chart.yaml](blog-app-chart/Chart.yaml) : Métadonnées du chart
+- ⚙️ [values.yaml](blog-app-chart/values.yaml#L1-L71) : Configurations (MONGO_DB_URI, PORT, annotations Prometheus)
+- 📋 [templates/deployment.yaml](blog-app-chart/templates/deployment.yaml#L1-L13) : Gabarit de déploiement
+
+---
+
+### 📍 ÉTAPE 6 : URLS D'ACCÈS
+
+Accéder aux différents services via les URLs suivantes :
+
+| Service                 | URL                                  | Notes                    |
+| ----------------------- | ------------------------------------ | ------------------------ |
+| **Application (Local)** | `http://localhost:3000`              | Docker                   |
+| **Application (K8s)**   | `http://localhost`                   | Via service LoadBalancer |
+| **Jenkins**             | `http://localhost:8089`              | Pipeline CI/CD           |
+| **Grafana**             | `http://localhost:8080`              | Credentials: admin/admin |
+| **Prometheus**          | `http://localhost:9090`              | Métriques & alertes      |
+| **Métriques**           | `http://localhost:3000/metrics`      | Format Prometheus        |
+| **Health Check**        | `http://localhost:3000/health/live`  | Liveness probe           |
+| **Readiness**           | `http://localhost:3000/health/ready` | Readiness probe          |
+
+---
+
+### 🔒 Sécurité
+
+- Variables sensibles sont ignorées dans [.gitignore](.gitignore) (`.env`, credentials Docker Hub)
+- Utiliser [.env.example](.env.example) comme template pour configurer les variables locales
+- Dockerfile utilise [.dockerignore](.dockerignore) pour exclure les fichiers inutiles
+- Secrets Kubernetes dans [k8s/secret.yaml](k8s/secret.yaml) à adapter selon l'environnement
 
 ## 📄 Licence
 
