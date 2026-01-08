@@ -1,0 +1,71 @@
+
+replicaCount: 2
+
+image:
+  repository: dripp/backend-app
+  pullPolicy: IfNotPresent
+  
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  
+  create: true
+  
+  automount: true
+  
+  annotations: {}
+  
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3000"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  {}
+  
+
+securityContext:
+  {}
+  
+
+service:
+  type: LoadBalancer
+  port: 80
+
+ingress:
+  enabled: false
+
+resources:
+  {}
+  
+
+autoscaling:
+  enabled: false
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 3000  
+
+env:
+  NODE_ENV: "production"
+  PORT: "3000"
+  MONGO_DB_URI: "mongodb://mongodb-service:27017/appdb"
+
+prometheus:
+  enabled: true
+  scrape: "true"
+  port: "3000"
+  path: "/metrics"

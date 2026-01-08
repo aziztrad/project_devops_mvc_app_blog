@@ -1,5 +1,7 @@
-node_modules;
-npm - debug.log.env.git.gitignore;
-Dockerfile;
-docker - compose.yml;
-README.md;
+node_modules
+npm-debug.log*
+yarn-error.log*
+.git
+.gitignore
+.env
+logs
