@@ -569,33 +569,27 @@ Outil de développement qui surveille les modifications de fichiers et relance a
 - ✅ Détection automatique des changements
 - ✅ Configuration simple
 
-## 📝 Travail Pratique Réalisé
+## 🛠️ CI/CD et Observabilité
 
-### ✅ Tâches Accomplies
+### Jenkins
 
-1. **✅ Route "À Propos"** : `GET /about` - Retourne les infos de l'API
-2. **✅ Route Utilisateurs** : `GET /api/users` - Liste d'utilisateurs factices
-3. **✅ Route Contact** : `POST /contact` - Gestion des messages de contact
-4. **✅ Tests Postman** : Validation de toutes les routes
+- Pipeline déclarative dans [Jenkinsfile](Jenkinsfile) : build image Docker, scan simulé Trivy, push Docker Hub, étape de déploiement Kubernetes simulée.
+- Variables d'identifiants Docker Hub référencées via `dockerhub-credentials` (à configurer dans Jenkins Credentials).
 
-### 🎯 Compétences Acquises
+### Docker
 
-- Configuration d'un projet Node.js avec NPM
-- Création d'un serveur Express
-- Gestion des routes GET et POST
-- Utilisation de middlewares
-- Parsing de données JSON
-- Test d'API avec Postman
-- Validation de données (version améliorée)
-- Gestion d'erreurs HTTP
+- Image construite depuis la racine (Dockerfile) et publiée sous `dripp/backend-app` (tag build number et `latest`).
+- Contexte allégé via [.dockerignore](.dockerignore) et variables sensibles non incluses grâce à [.gitignore](.gitignore).
 
-## 📚 Ressources Utiles
+### Helm Chart
 
-- [Documentation Express.js](https://expressjs.com/)
-- [Documentation Node.js](https://nodejs.org/docs/)
-- [Guide Postman](https://learning.postman.com/)
-- [MDN - HTTP Status Codes](https://developer.mozilla.org/fr/docs/Web/HTTP/Status)
-- [NPM Documentation](https://docs.npmjs.com/)
+- Chart dans [blog-app-chart](blog-app-chart) avec valeurs par défaut dans [values.yaml](blog-app-chart/values.yaml#L1-L71) (MONGO_DB_URI, PORT, annotations Prometheus, service LoadBalancer).
+- Déploiement modèle dans [templates/deployment.yaml](blog-app-chart/templates/deployment.yaml#L1-L13) à adapter selon l'image et les ressources souhaitées.
+
+### Prometheus & Grafana
+
+- Métriques exposées via `express-prom-bundle` sur `/metrics` (port 3000) comme déclaré dans [server.js](server.js#L9-L66).
+- Annotations de scraping déjà posées dans le chart Helm (port 3000, chemin `/metrics`). Grafana peut consommer ces métriques via Prometheus pour dashboards basiques (latence, taux d'erreur, throughput).
 
 ## 📄 Licence
 
